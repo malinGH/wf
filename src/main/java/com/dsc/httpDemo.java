@@ -31,7 +31,7 @@ import com.alibaba.fastjson.JSONObject;
 public class httpDemo {
 	public static void main(String[] args) {
 		
-		test2();
+		test1();
 	}
 	
 	public static void test2() {
@@ -63,8 +63,8 @@ public class httpDemo {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		CookieStore cookieStore = new BasicCookieStore();
 		httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-		HttpHost proxy = new HttpHost("218.93.191.132",809);
-		HttpGet getmethod = new HttpGet("https://www.renrenche.com/as/car/aa54f7d9ab0313f1?plog_id=33d549bc5e13697a06557f368cb15bad");
+		//HttpHost proxy = new HttpHost("218.93.191.132",809);
+		HttpGet getmethod = new HttpGet("https://www.guazi.com/hz/buy/");
 		getmethod.addHeader(new BasicHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"));
 	//	getmethod.addHeader(new BasicHeader("Cookie","antipas=42270825218X01667x155gB846"));
 //		getmethod.addHeader(new BasicHeader("Host","www.renrenche.com"));
@@ -72,7 +72,7 @@ public class httpDemo {
 		//TimeUnit.MINUTES.sleep(10);
 		try {
 		//	httpclient.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
-			HttpResponse httpresponse =  httpclient.execute(proxy,getmethod);
+			HttpResponse httpresponse =  httpclient.execute(getmethod);
 			HttpEntity httpentity = httpresponse.getEntity();
 		
 		    System.out.println(httpresponse.getStatusLine().getStatusCode());
@@ -99,7 +99,7 @@ public class httpDemo {
         try {
             CookieStore cookieStore = new BasicCookieStore();
             httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-            httpPost = new HttpPost("https://www.guazi.com/foshan/ef2259a8653a9feex.htm#fr_page=list&fr_pos=city&fr_no=39");
+            httpPost = new HttpPost("https://www.guazi.com/hz/buy/");
 //            List<NameValuePair> list = new ArrayList<NameValuePair>();
 //            Iterator<Map.Entry<String, String>> iterator = map.entrySet().iterator();
 //            while (iterator.hasNext()) {
