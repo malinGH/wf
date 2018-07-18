@@ -6,6 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.Proxy;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -35,6 +40,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.util.EntityUtils;
+import org.springframework.util.CollectionUtils;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
@@ -89,7 +95,9 @@ public class httpDemo {
 				String[] str = entry.getValue().toString().split(":");
 				System.out.println("host:" + str[0] + " port:" + str[1]);
 				proxy = new HttpHost(str[0],Integer.parseInt(str[1]));
-				return proxy;
+				if(isGoodProxy(proxy)) {
+					return proxy;
+				}
 			}
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
@@ -102,13 +110,46 @@ public class httpDemo {
 	}
 
 	
-	public static boolean isGoodProxy() {
+	public static boolean isGoodProxy(HttpHost httphost ) {
+		boolean isGoodProxy = false;
 		List<String> checkUrls = new ArrayList<String>();
 		checkUrls.add("http://www.baidu.com/");
 		checkUrls.add("http://www.sina.com.cn/");
 		checkUrls.add("http://www.taobao.com/");
-		
-		return false;
+		Proxy proxy = new Proxy(Proxy.Type.HTTP,new InetSocketAddress(httphost.getHostName(),httphost.getPort()));
+		for(String url:checkUrls) {
+			try {
+				URL u = new URL(url);
+				URLConnection connection = u.openConnection(proxy);
+				connection.setConnectTimeout(600);
+				connection.setReadTimeout(1200);
+				connection.connect();
+				if(CollectionUtils.isEmpty(connection.getHeaderFields())) {
+					isGoodProxy = false;
+					continue;
+				}
+				for(List<String> vs:connection.getHeaderFields().values()) {
+					for(String value:vs) {
+						if(value.toUpperCase().indexOf("200 OK")!=-1) {
+							isGoodProxy = true;
+							break;
+						}
+					}
+				}
+				if(	isGoodProxy ) {
+					break;
+				}
+			} catch (MalformedURLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("URL异常");
+			}catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("open proxy异常");
+			}
+		}
+		return isGoodProxy;
 	}
 	
 	
@@ -117,8 +158,7 @@ public class httpDemo {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		CookieStore cookieStore = new BasicCookieStore();
 		httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-		
-		HttpGet getmethod = new HttpGet("http://www.baidu.com/");
+		HttpGet getmethod = new HttpGet("https://www.guazi.com/www/buy/i7/");
 		for(Header header:headers){
 			getmethod.addHeader(header);
 		}
@@ -133,13 +173,14 @@ public class httpDemo {
 		                .setProxy(proxy)
 		                .build();
 				getmethod.setConfig(config);
+				System.out.println("哈哈哈哈哈哈哈哈哈哈哈");
 			}
 			HttpResponse httpresponse = httpclient.execute(getmethod);
 			HttpEntity httpentity = httpresponse.getEntity();
 			System.out.println(httpresponse.getStatusLine().getStatusCode());
-			System.out.println(EntityUtils.toString(httpentity, "UTF-8"));
+			String content = EntityUtils.toString(httpentity, "UTF-8");
 			if(httpresponse.getStatusLine().getStatusCode()==203){
-				String str = EntityUtils.toString(httpentity, "UTF-8");
+				String str = content;
 			    String from = "value=anti(";
 				int startIndex = str.indexOf(from)+from.length();
 				int endIndex = str.indexOf(");var name='antipas'");
@@ -186,7 +227,6 @@ public class httpDemo {
 			String cookie_user = null;
 			List<Cookie> cookies = cookieStore.getCookies();
 			for (int i = 0; i < cookies.size(); i++) {
-				System.out.println(1);
 				if (cookies.get(i).getName().equals("JSESSIONID")) {
 					JSESSIONID = cookies.get(i).getValue();
 				}
