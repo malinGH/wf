@@ -194,12 +194,29 @@ function anti(string, key) {
     var estring = hex(string);
     return charRun(estring)
 }
-function wf(){
-	var value = anti('3GVJyapXVeZtFvrSaDnzKaVH1u4yeLpdyEXhsGaMVaw=','23226372278867275988898');
-	var name = 'antipas';
-	var url = '';
-	var date = new Date();
+function xredirect(name, value, url) {
+    var date = new Date();
     date.setTime(date.getTime() + 2592000000);
     var expires = "; expires=" + date.toUTCString();
-    return  name + "=" + value + expires + "; path=/";;
+//    if.cookie = name + "=" + value + expires + "; path=/";
+//    if (
+//    if.cookie.indexOf(name) === -1 && navigator.cookieEnabled) {
+//        alert('请修改浏览器设置,允许1c缓存')
+//    } else {
+        if (url == '') {
+            var url = location.href;
+            if (location.protocol != 'https:') {
+                url = 'https:' + 123
+            }
+        } else {
+            if (location.protocol != 'https:') {
+                url = 'https:' + url
+            }
+        }
+        var ulen = url.indexOf('#');
+        if (ulen !== -1) {
+            url = url.substring(0, ulen)
+        }
+        location.replace(url)
+//    }
 }
