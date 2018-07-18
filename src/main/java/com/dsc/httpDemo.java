@@ -24,6 +24,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRouteParams;
@@ -39,21 +41,23 @@ import com.alibaba.fastjson.JSONObject;
 
 public class httpDemo {
 	public static void main(String[] args) {
-
 		try {
-			test1();
+			List<Header> headers = new ArrayList<Header>();
+			headers.add(new BasicHeader("User-Agent",
+					"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"));
+			HttpHost proxy = test2();
+			test1(headers,proxy);	
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	public static void test3() throws Exception {
-		String jsFile = "/Users/fanwang/eclipseProjects/wf/src/main/webapp/WEB-INF/js/guazicookie.js";
+	public static  String  test3(Object[] obj) throws Exception {
+		String jsFile = "src/main/webapp/WEB-INF/js/guazicookie.js";
 		// 得到一个ScriptEngine对象
 		ScriptEngineManager maneger = new ScriptEngineManager();
 		ScriptEngine engine = maneger.getEngineByName("JavaScript");
-
 		FileInputStream fileInputStream = new FileInputStream(new File(jsFile));
 		Reader scriptReader = new InputStreamReader(fileInputStream, "utf-8");
 		try {
@@ -61,33 +65,19 @@ public class httpDemo {
 			if (engine instanceof Invocable) {
 				// 调用JS方法
 				Invocable invocable = (Invocable) engine;
-				String result = (String) invocable.invokeFunction("wf");
-				System.out.println(result);
-				System.out.println(result.length());
+				String result = (String) invocable.invokeFunction("createCookie", obj);
+				return result;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			scriptReader.close();
 		}
-
-		// CloseableHttpClient httpclient = HttpClients.createDefault();
-		// HttpGet httpget = new HttpGet("https://www.guazi.com/hz/buy/");
-		// try {
-		// HttpResponse httpresponse = httpclient.execute(httpget);
-		// HttpEntity entity = httpresponse.getEntity();
-		// System.out.println(EntityUtils.toString(entity,"UTF-8"));
-		// } catch (ClientProtocolException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// } catch (IOException e) {
-		// // TODO Auto-generated catch block
-		// e.printStackTrace();
-		// }
-
+		return null;
 	}
 
-	public static void test2() {
+	public static HttpHost test2() {
+		HttpHost proxy = null;
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		HttpGet httpget = new HttpGet("http://proxypool.sqaproxy.souche.com/api/display?group=1");
 		try {
@@ -98,6 +88,8 @@ public class httpDemo {
 			for (Entry entry : entrySet) {
 				String[] str = entry.getValue().toString().split(":");
 				System.out.println("host:" + str[0] + " port:" + str[1]);
+				proxy = new HttpHost(str[0],Integer.parseInt(str[1]));
+				return proxy;
 			}
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
@@ -106,36 +98,74 @@ public class httpDemo {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
+		return null;
 	}
 
-	public static void test1() {
-
+	
+	public static boolean isGoodProxy() {
+		List<String> checkUrls = new ArrayList<String>();
+		checkUrls.add("http://www.baidu.com/");
+		checkUrls.add("http://www.sina.com.cn/");
+		checkUrls.add("http://www.taobao.com/");
+		
+		return false;
+	}
+	
+	
+	
+	public static void test1(List<Header> headers,HttpHost proxy ) {
 		CloseableHttpClient httpclient = HttpClients.createDefault();
 		CookieStore cookieStore = new BasicCookieStore();
 		httpclient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
-		// HttpHost proxy = new HttpHost("218.93.191.132",809);
-		HttpGet getmethod = new HttpGet("https://www.guazi.com/hz/buy/");
-		getmethod.addHeader(new BasicHeader("User-Agent",
-				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36"));
-		getmethod.addHeader(new BasicHeader("Cookie","antipas=25347N650691848Be58Xh6435Y900"));
-		//getmethod.addHeader(new BasicHeader("Host","www.guazi.com"));
-		// getmethod.addHeader(new BasicHeader("expires","Thu, 16 Aug 2018 15:10:58 GMT"));
-		// TimeUnit.MINUTES.sleep(10);
+		
+		HttpGet getmethod = new HttpGet("http://www.baidu.com/");
+		for(Header header:headers){
+			getmethod.addHeader(header);
+		}
 		try {
-			// httpclient.getParams().setParameter(ConnRouteParams.DEFAULT_PROXY, proxy);
+			if(proxy!=null){
+				RequestConfig config = RequestConfig.custom().setConnectTimeout(10000)
+		                .setConnectionRequestTimeout(10000)
+		                .setMaxRedirects(4)
+		                .setSocketTimeout(10000)
+		                .setRedirectsEnabled(true)
+		                .setCookieSpec(CookieSpecs.STANDARD_STRICT)
+		                .setProxy(proxy)
+		                .build();
+				getmethod.setConfig(config);
+			}
 			HttpResponse httpresponse = httpclient.execute(getmethod);
 			HttpEntity httpentity = httpresponse.getEntity();
-
 			System.out.println(httpresponse.getStatusLine().getStatusCode());
 			System.out.println(EntityUtils.toString(httpentity, "UTF-8"));
+			if(httpresponse.getStatusLine().getStatusCode()==203){
+				String str = EntityUtils.toString(httpentity, "UTF-8");
+			    String from = "value=anti(";
+				int startIndex = str.indexOf(from)+from.length();
+				int endIndex = str.indexOf(");var name='antipas'");
+				String[] subStr = str.substring(startIndex, endIndex).split(",");
+				String string = subStr[0].substring(1,subStr[0].length()-1);
+				String key = subStr[1].substring(1, subStr[1].length()-1);
+				Object[] obj = new Object[] {string,key};
+				try {
+					String cookie = test3(obj);
+					getmethod.addHeader(new BasicHeader("Cookie", cookie));
+					httpresponse = httpclient.execute(getmethod);
+					httpentity = httpresponse.getEntity();
+					
+					System.out.println(EntityUtils.toString(httpentity, "UTF-8"));
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			
 			List<Cookie> cookies = cookieStore.getCookies();
 			for (int i = 0; i < cookies.size(); i++) {
 				System.out.println(cookies.get(i).getValue());
 			}
 		} catch (ClientProtocolException e) {
 			// TODO Auto-generated catch block
-
 			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -151,16 +181,6 @@ public class httpDemo {
 			CookieStore cookieStore = new BasicCookieStore();
 			httpClient = HttpClients.custom().setDefaultCookieStore(cookieStore).build();
 			httpPost = new HttpPost("https://www.guazi.com/hz/buy/");
-			// List<NameValuePair> list = new ArrayList<NameValuePair>();
-			// Iterator<Map.Entry<String, String>> iterator = map.entrySet().iterator();
-			// while (iterator.hasNext()) {
-			// Entry<String, String> elem = (Entry<String, String>) iterator.next();
-			// list.add(new BasicNameValuePair(elem.getKey(), elem.getValue()));
-			// }
-			// if (list.size() > 0) {
-			// UrlEncodedFormEntity entity = new UrlEncodedFormEntity(list, charset);
-			// httpPost.setEntity(entity);
-			// }
 			httpClient.execute(httpPost);
 			String JSESSIONID = null;
 			String cookie_user = null;

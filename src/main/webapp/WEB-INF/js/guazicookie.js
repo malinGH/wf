@@ -194,12 +194,8 @@ function anti(string, key) {
     var estring = hex(string);
     return charRun(estring)
 }
-function wf(){
-	var value = anti('3GVJyapXVeZtFvrSaDnzKaVH1u4yeLpdyEXhsGaMVaw=','23226372278867275988898');
+function createCookie(string,key){
+	var value = anti(string,key);
 	var name = 'antipas';
-	var url = '';
-	var date = new Date();
-    date.setTime(date.getTime() + 2592000000);
-    var expires = "; expires=" + date.toUTCString();
-    return  name + "=" + value + expires + "; path=/";;
+    return  name + "=" + value;
 }
