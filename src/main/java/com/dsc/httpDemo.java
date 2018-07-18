@@ -173,7 +173,6 @@ public class httpDemo {
 		                .setProxy(proxy)
 		                .build();
 				getmethod.setConfig(config);
-				System.out.println("哈哈哈哈哈哈哈哈哈哈哈");
 			}
 			HttpResponse httpresponse = httpclient.execute(getmethod);
 			HttpEntity httpentity = httpresponse.getEntity();
